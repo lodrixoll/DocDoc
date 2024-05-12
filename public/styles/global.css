@@ -1,0 +1,9 @@
+body {
+    background-color: #CFD8DC !important;
+    overflow-x: hidden;
+}
+
+.container.clamp {
+    max-width: 800px;
+    margin: 0 auto;
+}
