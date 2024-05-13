@@ -45,23 +45,27 @@ const Home: React.FC = () => {
             <div className="text-center">
                 <h1 className="mb-5"><span style={{ color: '#1976d2' }}>doc</span><span className="text-danger">doc</span></h1>
                 <img src="/images/icons/favicon.svg" alt="favicon" className="img-fluid mb-5" />
+                {session && (
+                    <p style={{ color: '#dc3545', fontSize: '20px' }}>select repo</p>
+                )}
                 <div className="d-flex justify-content-center mt-3">
-                    <input type="text" className="form-control" placeholder="Enter documentation URL" style={{ backgroundColor: '#E9EBEE' }} />
+                    <input type="text" className="form-control" placeholder="Enter documentation URL" style={{ backgroundColor: '#E9EBEE', marginRight: '20px' }} />
                     {!session ? (
                         <button onClick={() => signIn('github')} className="btn btn-danger ml-2 text-nowrap" title="Connect GitHub">Connect GitHub</button>
                     ) : (
                         <div>
-                            <div className="user-info" style={{ position: 'absolute', top: '10px', left: '10px' }}>
-                                <div className="user-initials" style={{ backgroundColor: '#1976d2', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold', fontSize: '20px' }}>
-                                    {getInitials(session.user?.name || "")}
+                            <div className="user-info" style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <button onClick={() => signOut()} className="btn btn-sm btn-secondary mr-2">Sign Out</button>
+                                    <div className="user-initials" style={{ backgroundColor: '#1976d2', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 'bold', fontSize: '20px' }}>
+                                        {getInitials(session.user?.name || "")}
+                                    </div>
                                 </div>
-                                <button onClick={() => signOut()} className="btn btn-sm btn-secondary ml-2">Sign Out</button>
                             </div>
-                            <p>Welcome, {session.user?.name}</p>
                             {loading ? (
                                 <p>Loading repositories...</p>
                             ) : (
-                                <select className="form-control ml-2">
+                                <select className="form-control" style={{ backgroundColor: '#dc3545', color: 'white'}}>
                                     {repositories.map(repo => (
                                         <option key={repo.id} value={repo.name}>{repo.name}</option>
                                     ))}
