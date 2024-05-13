@@ -49,7 +49,7 @@ const Home: React.FC = () => {
                     <p style={{ color: '#dc3545', fontSize: '20px' }}>select repo</p>
                 )}
                 <div className="d-flex justify-content-center mt-3">
-                    <input type="text" className="form-control" placeholder="Enter documentation URL" style={{ backgroundColor: '#E9EBEE', marginRight: '20px' }} />
+                    <input type="text" className="form-control" placeholder="Enter documentation URL" style={{ backgroundColor: '#E9EBEE', marginRight: '20px', borderColor: '#1976d2' }} />
                     {!session ? (
                         <button onClick={() => signIn('github')} className="btn btn-danger ml-2 text-nowrap" title="Connect GitHub">Connect GitHub</button>
                     ) : (
