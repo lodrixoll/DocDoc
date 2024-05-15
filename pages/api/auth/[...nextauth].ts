@@ -3,18 +3,16 @@ import { JWT } from "next-auth/jwt";
 import { Session, Profile as NextAuthProfile } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 
-// Extend the session and token models
 interface ExtendedToken extends JWT {
     accessToken?: string;
-    login?: string; // Add login property
+    login?: string;
 }
 
 interface ExtendedSession extends Session {
     accessToken?: string;
-    login?: string; // Add login property
+    login?: string;
 }
 
-// Extend the Profile type to include the login property
 interface ExtendedProfile extends NextAuthProfile {
     login?: string;
 }
@@ -44,7 +42,7 @@ export default NextAuth({
                 const extendedToken = token as ExtendedToken;
                 const extendedProfile = profile as ExtendedProfile;
                 extendedToken.accessToken = account.access_token;
-                extendedToken.login = extendedProfile?.login; // Add login to token
+                extendedToken.login = extendedProfile?.login;
             }
             return token;
         },
@@ -52,7 +50,7 @@ export default NextAuth({
             const extendedSession = session as ExtendedSession;
             const extendedToken = token as ExtendedToken;
             extendedSession.accessToken = extendedToken.accessToken;
-            extendedSession.login = extendedToken.login; // Add login to session
+            extendedSession.login = extendedToken.login;
             return extendedSession;
         },
     },

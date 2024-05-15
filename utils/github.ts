@@ -55,6 +55,10 @@ export async function fetchReadme(owner: string, repo: string, accessToken: stri
     return readme;
 }
 
+// need to add deep directory integration. 
+// will fail for projects with /src or /ui directories
+//
+//
 export async function fetchDependencies(owner: string, repo: string, accessToken: string) {
     const filesToCheck = [
         'package.json', 'yarn.lock', // JavaScript/TypeScript

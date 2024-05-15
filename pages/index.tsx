@@ -91,12 +91,12 @@ const Home: React.FC = () => {
                                     <p><strong>Topics:</strong> {repoTopics.names ? repoTopics.names.join(', ') : 'No topics available'}</p>
                                 </div>
                             )}
-                            {dependencies && (
+                            {/* {dependencies && (
                                 <div className="mt-4">
                                     <h3>Dependencies</h3>
                                     <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{dependencies}</pre>
                                 </div>
-                            )}
+                            )} */}
                             {/* {readme && (
                                 <div className="mt-4">
                                     <h3>README</h3>
