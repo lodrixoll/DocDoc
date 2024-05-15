@@ -60,9 +60,6 @@ const Home: React.FC = () => {
             <div className="text-center">
                 <h1 className="mb-5"><span style={{ color: '#1976d2' }}>doc</span><span className="text-danger">doc</span></h1>
                 <img src="/images/icons/favicon.svg" alt="favicon" className="img-fluid mb-5" />
-                {session && (
-                    <p style={{ color: '#dc3545', fontSize: '20px' }}>select repo</p>
-                )}
                 <div className="d-flex justify-content-center mt-3">
                     <input type="text" className="form-control" placeholder="Enter documentation URL" style={{ backgroundColor: '#E9EBEE', marginRight: '20px', borderColor: '#1976d2' }} />
                     {!session ? (
@@ -81,6 +78,7 @@ const Home: React.FC = () => {
                                 <p>Loading repositories...</p>
                             ) : (
                                 <select className="form-control" style={{ backgroundColor: '#dc3545', color: 'white'}} onChange={(e) => setSelectedRepo(repositories.find(repo => repo.name === e.target.value) || null)}>
+                                    <option value="">Select</option>
                                     {repositories.map(repo => (
                                         <option key={repo.id} value={repo.name}>{repo.name}</option>
                                     ))}
