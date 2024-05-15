@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
-import { fetchGitHubRepositories, fetchRepositoryDetails, fetchReadme } from '../utils/github';
+import { fetchGitHubRepositories, fetchRepositoryLanguages, fetchRepositoryTopics, fetchReadme, fetchDependencies } from '../utils/github';
 
 interface Repository {
     id: number;
@@ -13,8 +13,10 @@ const Home: React.FC = () => {
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
-    const [repoDetails, setRepoDetails] = useState<{ languages: any, topics: any } | null>(null);
+    const [repoLanguages, setRepoLanguages] = useState<any | null>(null);
+    const [repoTopics, setRepoTopics] = useState<any | null>(null);
     const [readme, setReadme] = useState<string | null>(null);
+    const [dependencies, setDependencies] = useState<string | null>(null);
 
     useEffect(() => {
         if (session?.accessToken && typeof session.accessToken === 'string') {
@@ -28,13 +30,21 @@ const Home: React.FC = () => {
 
     useEffect(() => {
         if (selectedRepo && session?.accessToken && session.login) {
-            fetchRepositoryDetails(session.login, selectedRepo.name, session.accessToken)
-                .then(setRepoDetails)
-                .catch(error => console.error('Error fetching repository details:', error));
+            fetchRepositoryLanguages(session.login, selectedRepo.name, session.accessToken)
+                .then(setRepoLanguages)
+                .catch(error => console.error('Error fetching repository languages:', error));
+    
+            fetchRepositoryTopics(session.login, selectedRepo.name, session.accessToken)
+                .then(setRepoTopics)
+                .catch(error => console.error('Error fetching repository topics:', error));
     
             fetchReadme(session.login, selectedRepo.name, session.accessToken)
                 .then(setReadme)
                 .catch(error => console.error('Error fetching README:', error));
+
+            fetchDependencies(session.login, selectedRepo.name, session.accessToken)
+                .then(setDependencies)
+                .catch(error => console.error('Error fetching dependencies:', error));
         }
     }, [selectedRepo, session]);
 
@@ -76,11 +86,17 @@ const Home: React.FC = () => {
                                     ))}
                                 </select>
                             )}
-                            {repoDetails && (
+                            {repoLanguages && repoTopics && (
                                 <div className="mt-4">
                                     <h3>Repository Details</h3>
-                                    <p><strong>Languages:</strong> {Object.keys(repoDetails.languages).join(', ')}</p>
-                                    <p><strong>Topics:</strong> {repoDetails.topics.names ? repoDetails.topics.names.join(', ') : 'No topics available'}</p>
+                                    <p><strong>Languages:</strong> {Object.keys(repoLanguages).join(', ')}</p>
+                                    <p><strong>Topics:</strong> {repoTopics.names ? repoTopics.names.join(', ') : 'No topics available'}</p>
+                                </div>
+                            )}
+                            {dependencies && (
+                                <div className="mt-4">
+                                    <h3>Dependencies</h3>
+                                    <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{dependencies}</pre>
                                 </div>
                             )}
                             {/* {readme && (
