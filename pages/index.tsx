@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
+import { fetchGitHubRepositories, fetchRepositoryDetails, fetchReadme } from '../utils/github';
 
 interface Repository {
     id: number;
@@ -13,9 +14,9 @@ const Home: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
     const [repoDetails, setRepoDetails] = useState<{ languages: any, topics: any } | null>(null);
+    const [readme, setReadme] = useState<string | null>(null);
 
     useEffect(() => {
-        // Ensure accessToken is not null before fetching repositories
         if (session?.accessToken && typeof session.accessToken === 'string') {
             setLoading(true);
             fetchGitHubRepositories(session.accessToken)
@@ -27,40 +28,15 @@ const Home: React.FC = () => {
 
     useEffect(() => {
         if (selectedRepo && session?.accessToken && session.login) {
-            console.log("Login:", session.login); // Debugging log
             fetchRepositoryDetails(session.login, selectedRepo.name, session.accessToken)
                 .then(setRepoDetails)
                 .catch(error => console.error('Error fetching repository details:', error));
+    
+            fetchReadme(session.login, selectedRepo.name, session.accessToken)
+                .then(setReadme)
+                .catch(error => console.error('Error fetching README:', error));
         }
     }, [selectedRepo, session]);
-
-    async function fetchGitHubRepositories(accessToken: string) {
-        const response = await fetch('https://api.github.com/user/repos', {
-            headers: {
-                Authorization: `token ${accessToken}`,
-            },
-        });
-        const data = await response.json();
-        return data;
-    }
-
-    async function fetchRepositoryDetails(owner: string, repo: string, accessToken: string) {
-        const [languages, topics] = await Promise.all([
-            fetch(`https://api.github.com/repos/${owner}/${repo}/languages`, {
-                headers: {
-                    Authorization: `token ${accessToken}`,
-                },
-            }).then(res => res.json()),
-            fetch(`https://api.github.com/repos/${owner}/${repo}/topics`, {
-                headers: {
-                    Authorization: `token ${accessToken}`,
-                    Accept: 'application/vnd.github.mercy-preview+json', // Required for topics API
-                },
-            }).then(res => res.json()),
-        ]);
-
-        return { languages, topics };
-    }
 
     function getInitials(name: string | undefined): string {
         if (!name) return "";
@@ -107,6 +83,12 @@ const Home: React.FC = () => {
                                     <p><strong>Topics:</strong> {repoDetails.topics.names ? repoDetails.topics.names.join(', ') : 'No topics available'}</p>
                                 </div>
                             )}
+                            {/* {readme && (
+                                <div className="mt-4">
+                                    <h3>README</h3>
+                                    <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{readme}</pre>
+                                </div>
+                            )} */}
                         </div>
                     )}
                 </div>
