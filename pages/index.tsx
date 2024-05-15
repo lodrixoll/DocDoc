@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
+import { fetchGitHubRepositories, fetchRepositoryLanguages, fetchRepositoryTopics, fetchReadme, fetchDependencies } from '../utils/github';
 
 interface Repository {
     id: number;
@@ -8,12 +9,16 @@ interface Repository {
 }
 
 const Home: React.FC = () => {
-    const { data: session } = useSession() as { data: Session };
+    const { data: session } = useSession() as { data: Session & { login?: string } };
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [loading, setLoading] = useState(false);
+    const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
+    const [repoLanguages, setRepoLanguages] = useState<any | null>(null);
+    const [repoTopics, setRepoTopics] = useState<any | null>(null);
+    const [readme, setReadme] = useState<string | null>(null);
+    const [dependencies, setDependencies] = useState<string | null>(null);
 
     useEffect(() => {
-        // Ensure accessToken is not null before fetching repositories
         if (session?.accessToken && typeof session.accessToken === 'string') {
             setLoading(true);
             fetchGitHubRepositories(session.accessToken)
@@ -23,15 +28,25 @@ const Home: React.FC = () => {
         }
     }, [session]);
 
-    async function fetchGitHubRepositories(accessToken: string) {
-        const response = await fetch('https://api.github.com/user/repos', {
-            headers: {
-                Authorization: `token ${accessToken}`,
-            },
-        });
-        const data = await response.json();
-        return data;
-    }
+    useEffect(() => {
+        if (selectedRepo && session?.accessToken && session.login) {
+            fetchRepositoryLanguages(session.login, selectedRepo.name, session.accessToken)
+                .then(setRepoLanguages)
+                .catch(error => console.error('Error fetching repository languages:', error));
+    
+            fetchRepositoryTopics(session.login, selectedRepo.name, session.accessToken)
+                .then(setRepoTopics)
+                .catch(error => console.error('Error fetching repository topics:', error));
+    
+            fetchReadme(session.login, selectedRepo.name, session.accessToken)
+                .then(setReadme)
+                .catch(error => console.error('Error fetching README:', error));
+
+            fetchDependencies(session.login, selectedRepo.name, session.accessToken)
+                .then(setDependencies)
+                .catch(error => console.error('Error fetching dependencies:', error));
+        }
+    }, [selectedRepo, session]);
 
     function getInitials(name: string | undefined): string {
         if (!name) return "";
@@ -65,12 +80,31 @@ const Home: React.FC = () => {
                             {loading ? (
                                 <p>Loading repositories...</p>
                             ) : (
-                                <select className="form-control" style={{ backgroundColor: '#dc3545', color: 'white'}}>
+                                <select className="form-control" style={{ backgroundColor: '#dc3545', color: 'white'}} onChange={(e) => setSelectedRepo(repositories.find(repo => repo.name === e.target.value) || null)}>
                                     {repositories.map(repo => (
                                         <option key={repo.id} value={repo.name}>{repo.name}</option>
                                     ))}
                                 </select>
                             )}
+                            {repoLanguages && repoTopics && (
+                                <div className="mt-4">
+                                    <h3>Repository Details</h3>
+                                    <p><strong>Languages:</strong> {Object.keys(repoLanguages).join(', ')}</p>
+                                    <p><strong>Topics:</strong> {repoTopics.names ? repoTopics.names.join(', ') : 'No topics available'}</p>
+                                </div>
+                            )}
+                            {dependencies && (
+                                <div className="mt-4">
+                                    <h3>Dependencies</h3>
+                                    <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{dependencies}</pre>
+                                </div>
+                            )}
+                            {/* {readme && (
+                                <div className="mt-4">
+                                    <h3>README</h3>
+                                    <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{readme}</pre>
+                                </div>
+                            )} */}
                         </div>
                     )}
                 </div>
@@ -80,3 +114,4 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
