@@ -17,6 +17,7 @@ const Home: React.FC = () => {
     const [repoTopics, setRepoTopics] = useState<any | null>(null);
     const [readme, setReadme] = useState<string | null>(null);
     const [dependencies, setDependencies] = useState<string | null>(null);
+    const [testMessage, setTestMessage] = useState<string>('');
 
     useEffect(() => {
         if (session?.accessToken && typeof session.accessToken === 'string') {
@@ -54,6 +55,25 @@ const Home: React.FC = () => {
         const initials = names.map(n => n[0]).join('');
         return initials.length > 1 ? initials[0] + initials[initials.length - 1] : initials;
     }
+
+    const handleTestRequest = async () => {
+        try {
+            const response = await fetch('/api/openai', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    messages: [{ role: 'user', content: 'This is a test message' }],
+                }),
+            });
+
+            const data = await response.json();
+            setTestMessage(data.content);
+        } catch (error) {
+            console.error('Error making test request:', error);
+        }
+    };
 
     return (
         <div className="container clamp d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
@@ -106,6 +126,13 @@ const Home: React.FC = () => {
                         </div>
                     )}
                 </div>
+                <button onClick={handleTestRequest} className="btn btn-primary mt-3">Send Test Message</button>
+                {testMessage && (
+                    <div className="mt-3">
+                        <h3>Test Message Response</h3>
+                        <p>{testMessage}</p>
+                    </div>
+                )}
             </div>
         </div>
     );
