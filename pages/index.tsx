@@ -17,7 +17,7 @@ const Home: React.FC = () => {
     const [repoTopics, setRepoTopics] = useState<any | null>(null);
     const [readme, setReadme] = useState<string | null>(null);
     const [dependencies, setDependencies] = useState<string | null>(null);
-    const [testMessage, setTestMessage] = useState<string>('');
+    const [aiResponse, setAiResponse] = useState<string | null>(null);
 
     useEffect(() => {
         if (session?.accessToken && typeof session.accessToken === 'string') {
@@ -31,21 +31,28 @@ const Home: React.FC = () => {
 
     useEffect(() => {
         if (selectedRepo && session?.accessToken && session.login) {
-            fetchRepositoryLanguages(session.login, selectedRepo.name, session.accessToken)
-                .then(setRepoLanguages)
-                .catch(error => console.error('Error fetching repository languages:', error));
-    
-            fetchRepositoryTopics(session.login, selectedRepo.name, session.accessToken)
-                .then(setRepoTopics)
-                .catch(error => console.error('Error fetching repository topics:', error));
-    
-            fetchReadme(session.login, selectedRepo.name, session.accessToken)
-                .then(setReadme)
-                .catch(error => console.error('Error fetching README:', error));
+            const fetchDetails = async () => {
+                try {
+                    const languages = await fetchRepositoryLanguages(session.login!, selectedRepo.name, session.accessToken!);
+                    setRepoLanguages(languages);
 
-            fetchDependencies(session.login, selectedRepo.name, session.accessToken)
-                .then(setDependencies)
-                .catch(error => console.error('Error fetching dependencies:', error));
+                    const topics = await fetchRepositoryTopics(session.login!, selectedRepo.name, session.accessToken!);
+                    setRepoTopics(topics);
+
+                    const readme = await fetchReadme(session.login!, selectedRepo.name, session.accessToken!);
+                    setReadme(readme);
+
+                    const dependencies = await fetchDependencies(session.login!, selectedRepo.name, session.accessToken!);
+                    setDependencies(dependencies);
+
+                    // Send details to OpenAI
+                    await sendDetailsToOpenAI({ languages, topics, readme, dependencies });
+                } catch (error) {
+                    console.error('Error fetching repository details:', error);
+                }
+            };
+
+            fetchDetails();
         }
     }, [selectedRepo, session]);
 
@@ -56,22 +63,31 @@ const Home: React.FC = () => {
         return initials.length > 1 ? initials[0] + initials[initials.length - 1] : initials;
     }
 
-    const handleTestRequest = async () => {
+    const sendDetailsToOpenAI = async (details: { languages: any, topics: any, readme: string | null, dependencies: string | null }) => {
         try {
+            const prompt = `
+                Determine the tech stack of the following repository. Provide your response as no more than 10 words.
+
+                Languages: ${Object.keys(details.languages).join(', ')}
+                Topics: ${details.topics.names ? details.topics.names.join(', ') : 'No topics available'}
+                README: ${details.readme || 'No README available'}
+                Dependencies: ${details.dependencies || 'No dependencies available'}
+            `;
+
             const response = await fetch('/api/openai', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    messages: [{ role: 'user', content: 'This is a test message' }],
+                    messages: [{ role: 'user', content: prompt }],
                 }),
             });
 
             const data = await response.json();
-            setTestMessage(data.content);
+            setAiResponse(data.content);
         } catch (error) {
-            console.error('Error making test request:', error);
+            console.error('Error sending details to OpenAI:', error);
         }
     };
 
@@ -104,33 +120,13 @@ const Home: React.FC = () => {
                                     ))}
                                 </select>
                             )}
-                            {repoLanguages && repoTopics && (
-                                <div className="mt-4">
-                                    <h3>Repository Details</h3>
-                                    <p><strong>Languages:</strong> {Object.keys(repoLanguages).join(', ')}</p>
-                                    <p><strong>Topics:</strong> {repoTopics.names ? repoTopics.names.join(', ') : 'No topics available'}</p>
-                                </div>
-                            )}
-                            {/* {dependencies && (
-                                <div className="mt-4">
-                                    <h3>Dependencies</h3>
-                                    <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{dependencies}</pre>
-                                </div>
-                            )} */}
-                            {/* {readme && (
-                                <div className="mt-4">
-                                    <h3>README</h3>
-                                    <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{readme}</pre>
-                                </div>
-                            )} */}
                         </div>
                     )}
                 </div>
-                <button onClick={handleTestRequest} className="btn btn-primary mt-3">Send Test Message</button>
-                {testMessage && (
+                {aiResponse && (
                     <div className="mt-3">
-                        <h3>Test Message Response</h3>
-                        <p>{testMessage}</p>
+                        <h3>AI Response</h3>
+                        <p>{aiResponse}</p>
                     </div>
                 )}
             </div>
