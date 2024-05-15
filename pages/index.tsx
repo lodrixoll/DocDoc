@@ -18,6 +18,7 @@ const Home: React.FC = () => {
     const [readme, setReadme] = useState<string | null>(null);
     const [dependencies, setDependencies] = useState<string | null>(null);
     const [aiResponse, setAiResponse] = useState<string | null>(null);
+    const [aiLoading, setAiLoading] = useState(false);
 
     useEffect(() => {
         if (session?.accessToken && typeof session.accessToken === 'string') {
@@ -45,7 +46,6 @@ const Home: React.FC = () => {
                     const dependencies = await fetchDependencies(session.login!, selectedRepo.name, session.accessToken!);
                     setDependencies(dependencies);
 
-                    // Send details to OpenAI
                     await sendDetailsToOpenAI({ languages, topics, readme, dependencies });
                 } catch (error) {
                     console.error('Error fetching repository details:', error);
@@ -65,6 +65,7 @@ const Home: React.FC = () => {
 
     const sendDetailsToOpenAI = async (details: { languages: any, topics: any, readme: string | null, dependencies: string | null }) => {
         try {
+            setAiLoading(true);
             const prompt = `
                 Determine the tech stack of the following repository. Provide your response as no more than 10 words.
 
@@ -88,6 +89,8 @@ const Home: React.FC = () => {
             setAiResponse(data.content);
         } catch (error) {
             console.error('Error sending details to OpenAI:', error);
+        } finally {
+            setAiLoading(false);
         }
     };
 
@@ -111,7 +114,9 @@ const Home: React.FC = () => {
                                 </div>
                             </div>
                             {loading ? (
-                                <p>Loading repositories...</p>
+                                <div className="spinner-border text-danger" role="status">
+                                    <span className="sr-only">Loading...</span>
+                                </div>
                             ) : (
                                 <select className="form-control" style={{ backgroundColor: '#dc3545', color: 'white'}} onChange={(e) => setSelectedRepo(repositories.find(repo => repo.name === e.target.value) || null)}>
                                     <option value="">Select</option>
@@ -123,11 +128,17 @@ const Home: React.FC = () => {
                         </div>
                     )}
                 </div>
-                {aiResponse && (
-                    <div className="mt-3">
-                        <h3>AI Response</h3>
-                        <p>{aiResponse}</p>
+                {aiLoading ? (
+                    <div className="spinner-border text-danger mt-3" role="status">
+                        <span className="sr-only">Loading...</span>
                     </div>
+                ) : (
+                    aiResponse && (
+                        <div className="mt-3">
+                            <h3>AI Response</h3>
+                            <p>{aiResponse}</p>
+                        </div>
+                    )
                 )}
             </div>
         </div>
