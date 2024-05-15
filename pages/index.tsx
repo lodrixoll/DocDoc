@@ -8,9 +8,11 @@ interface Repository {
 }
 
 const Home: React.FC = () => {
-    const { data: session } = useSession() as { data: Session };
+    const { data: session } = useSession() as { data: Session & { login?: string } };
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [loading, setLoading] = useState(false);
+    const [selectedRepo, setSelectedRepo] = useState<Repository | null>(null);
+    const [repoDetails, setRepoDetails] = useState<{ languages: any, topics: any } | null>(null);
 
     useEffect(() => {
         // Ensure accessToken is not null before fetching repositories
@@ -23,6 +25,15 @@ const Home: React.FC = () => {
         }
     }, [session]);
 
+    useEffect(() => {
+        if (selectedRepo && session?.accessToken && session.login) {
+            console.log("Login:", session.login); // Debugging log
+            fetchRepositoryDetails(session.login, selectedRepo.name, session.accessToken)
+                .then(setRepoDetails)
+                .catch(error => console.error('Error fetching repository details:', error));
+        }
+    }, [selectedRepo, session]);
+
     async function fetchGitHubRepositories(accessToken: string) {
         const response = await fetch('https://api.github.com/user/repos', {
             headers: {
@@ -31,6 +42,24 @@ const Home: React.FC = () => {
         });
         const data = await response.json();
         return data;
+    }
+
+    async function fetchRepositoryDetails(owner: string, repo: string, accessToken: string) {
+        const [languages, topics] = await Promise.all([
+            fetch(`https://api.github.com/repos/${owner}/${repo}/languages`, {
+                headers: {
+                    Authorization: `token ${accessToken}`,
+                },
+            }).then(res => res.json()),
+            fetch(`https://api.github.com/repos/${owner}/${repo}/topics`, {
+                headers: {
+                    Authorization: `token ${accessToken}`,
+                    Accept: 'application/vnd.github.mercy-preview+json', // Required for topics API
+                },
+            }).then(res => res.json()),
+        ]);
+
+        return { languages, topics };
     }
 
     function getInitials(name: string | undefined): string {
@@ -65,11 +94,18 @@ const Home: React.FC = () => {
                             {loading ? (
                                 <p>Loading repositories...</p>
                             ) : (
-                                <select className="form-control" style={{ backgroundColor: '#dc3545', color: 'white'}}>
+                                <select className="form-control" style={{ backgroundColor: '#dc3545', color: 'white'}} onChange={(e) => setSelectedRepo(repositories.find(repo => repo.name === e.target.value) || null)}>
                                     {repositories.map(repo => (
                                         <option key={repo.id} value={repo.name}>{repo.name}</option>
                                     ))}
                                 </select>
+                            )}
+                            {repoDetails && (
+                                <div className="mt-4">
+                                    <h3>Repository Details</h3>
+                                    <p><strong>Languages:</strong> {Object.keys(repoDetails.languages).join(', ')}</p>
+                                    <p><strong>Topics:</strong> {repoDetails.topics.names ? repoDetails.topics.names.join(', ') : 'No topics available'}</p>
+                                </div>
                             )}
                         </div>
                     )}
@@ -80,3 +116,4 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+

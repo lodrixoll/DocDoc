@@ -1,15 +1,22 @@
 import NextAuth from "next-auth";
 import { JWT } from "next-auth/jwt";
-import { Session } from "next-auth";
+import { Session, Profile as NextAuthProfile } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
 
 // Extend the session and token models
 interface ExtendedToken extends JWT {
     accessToken?: string;
+    login?: string; // Add login property
 }
 
 interface ExtendedSession extends Session {
     accessToken?: string;
+    login?: string; // Add login property
+}
+
+// Extend the Profile type to include the login property
+interface ExtendedProfile extends NextAuthProfile {
+    login?: string;
 }
 
 if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
@@ -32,10 +39,12 @@ export default NextAuth({
         strategy: "jwt",
     },
     callbacks: {
-        async jwt({ token, account }) {
+        async jwt({ token, account, profile }) {
             if (account) {
                 const extendedToken = token as ExtendedToken;
+                const extendedProfile = profile as ExtendedProfile;
                 extendedToken.accessToken = account.access_token;
+                extendedToken.login = extendedProfile?.login; // Add login to token
             }
             return token;
         },
@@ -43,6 +52,7 @@ export default NextAuth({
             const extendedSession = session as ExtendedSession;
             const extendedToken = token as ExtendedToken;
             extendedSession.accessToken = extendedToken.accessToken;
+            extendedSession.login = extendedToken.login; // Add login to session
             return extendedSession;
         },
     },
