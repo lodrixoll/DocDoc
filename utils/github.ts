@@ -106,3 +106,114 @@ export async function fetchDependencies(owner: string, repo: string, accessToken
 
     return dependencies || null;
 }
+
+
+// ---------- Experimenting ----------
+//
+//
+export async function fetchRepositoryCommits(owner: string, repo: string, accessToken: string) {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits`, {
+        headers: {
+            Authorization: `token ${accessToken}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch repository commits');
+    }
+
+    const commits = await response.json();
+    return commits;
+}
+
+export async function fetchRepositoryPullRequests(owner: string, repo: string, accessToken: string) {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls?state=all`, { // fetch all pull requests
+        headers: {
+            Authorization: `token ${accessToken}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch repository pull requests');
+    }
+
+    const pullRequests = await response.json();
+    return pullRequests;
+}
+
+export async function fetchRepositoryIssues(owner: string, repo: string, accessToken: string) {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/issues`, {
+        headers: {
+            Authorization: `token ${accessToken}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch repository issues');
+    }
+
+    const issues = await response.json();
+    return issues;
+}
+
+export async function fetchEnvFiles(owner: string, repo: string, accessToken: string): Promise<string | null> {
+    const envFiles = [
+        '.env.example', '.env.sample', '.env',
+        '.env.development', '.env.production', '.env.local', '.env.test'
+    ];
+    const directories = ['', 'config/', 'env/', 'environments/'];
+
+    const fetchFile = async (filePath: string): Promise<string | null> => {
+        const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`, {
+            headers: {
+                Authorization: `token ${accessToken}`,
+                Accept: 'application/vnd.github.v3.raw',
+            },
+        });
+
+        if (response.ok) {
+            return await response.text();
+        }
+        return null;
+    };
+
+    for (const dir of directories) {
+        for (const file of envFiles) {
+            const content = await fetchFile(`${dir}${file}`);
+            if (content) {
+                return content;
+            }
+        }
+    }
+
+    return null;
+}
+
+export async function searchEnvFilesRecursively(owner: string, repo: string, accessToken: string, path: string = ''): Promise<string | null> {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+        headers: {
+            Authorization: `token ${accessToken}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch repository contents');
+    }
+
+    const items = await response.json();
+    for (const item of items) {
+        if (item.type === 'file' && item.name.startsWith('.env')) {
+            const content = await fetchEnvFiles(owner, repo, accessToken);
+            if (content) {
+                return content;
+            }
+        } else if (item.type === 'dir') {
+            const content = await searchEnvFilesRecursively(owner, repo, accessToken, item.path);
+            if (content) {
+                return content;
+            }
+        }
+    }
+
+    return null;
+}
