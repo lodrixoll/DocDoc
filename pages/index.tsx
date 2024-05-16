@@ -67,13 +67,32 @@ const Home: React.FC = () => {
         try {
             setAiLoading(true);
             const prompt = `
-                Determine the tech stack of the following repository. Provide your response as no more than 10 words.
+            Your task is to determine the tech stack of the following repository. 
+            You will be provided with the detected programming languages, topics (if any), README (if any), and dependencies (if any) of the repository to assist in determining the tech stack.
+            Your response should contain languages, JavaScript frameworks, CSS frameworks, and databases (if present) but should not contain small libraries.
+            Your response will be used to assist the user in installing technical SaaS products within their project so being accurate is paramount.
+            Be concise and provide your response as no more than 10 words.
+            Some example responses are:
+            - Next.js, TypeScript, and Tailwind CSS
+            - React, TypeScript, and Material-UI
+            - Node.js, Express, and MongoDB
+            - Laravel, Livewire, and Tailwind CSS
+            - Django, Bootstrap, and PostgreSQL
+            - Angular, RxJS, and NgRx
+            - Vue.js, Vuex, and Vuetify
+            - Ruby on Rails, PostgreSQL, and Redis
+            - Spring Boot, Thymeleaf, and MySQL
+            - Flask, SQLAlchemy, and SQLite
+            - Python, Tensorflow, Keras
+            - Python
 
                 Languages: ${Object.keys(details.languages).join(', ')}
                 Topics: ${details.topics.names ? details.topics.names.join(', ') : 'No topics available'}
                 README: ${details.readme || 'No README available'}
                 Dependencies: ${details.dependencies || 'No dependencies available'}
             `;
+
+            console.log("Prompt:", prompt);
 
             const response = await fetch('/api/openai', {
                 method: 'POST',
