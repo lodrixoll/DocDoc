@@ -85,9 +85,8 @@ export async function fetchDependencies(owner: string, repo: string, accessToken
         'dune', // OCaml
         'shard.yml' // Shell (Crystal)
     ];
-    let dependencies = null;
 
-    for (const file of filesToCheck) {
+    const fetchFile = async (file: string) => {
         const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${file}`, {
             headers: {
                 Authorization: `token ${accessToken}`,
@@ -96,14 +95,14 @@ export async function fetchDependencies(owner: string, repo: string, accessToken
         });
 
         if (response.ok) {
-            dependencies = await response.text();
-            break;
+            return await response.text();
         }
-    }
+        return null;
+    };
 
-    if (!dependencies) {
-        throw new Error('Failed to fetch dependencies');
-    }
+    const fetchPromises = filesToCheck.map(file => fetchFile(file));
+    const results = await Promise.all(fetchPromises);
+    const dependencies = results.find(result => result !== null);
 
-    return dependencies;
+    return dependencies || null;
 }
